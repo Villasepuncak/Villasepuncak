@@ -1,0 +1,179 @@
+{
+    "web_intro_images": {
+        "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
+        ]
+    },
+    "villas": [
+        {
+            "id": 1,
+            "title": "Oceanview Luxury Villa",
+            "price": 4500000,
+            "location": "Bali, Indonesia",
+            "description": "This stunning oceanfront villa offers breathtaking views, a private infinity pool, and luxurious amenities. Perfect for a romantic getaway or family vacation.",
+            "images": [
+                "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+            ],
+            "rating": 4.8,
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "guests": 6,
+            "size": "2200 sq ft",
+            "features": [
+                "Private Pool",
+                "Ocean View",
+                "Beach Access",
+                "Air Conditioning"
+            ],
+            "amenities": [
+                "WiFi",
+                "Kitchen",
+                "TV",
+                "Washer",
+                "Parking",
+                "Hot Tub"
+            ],
+            "type": "resort",
+            "bookingsThisMonth": 12,
+            "isFeatured": true
+        },
+        {
+            "id": 2,
+            "title": "Mountain Retreat Villa",
+            "price": 320,
+            "location": "Aspen, Colorado",
+            "description": "Nestled in the mountains, this cozy villa offers a peaceful retreat with stunning views, a hot tub, and easy access to hiking trails.",
+            "images": [
+                "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1600566752355-35792bedcfea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+            ],
+            "rating": 4.6,
+            "bedrooms": 2,
+            "bathrooms": 2,
+            "guests": 4,
+            "size": "1800 sq ft",
+            "features": [
+                "Mountain View",
+                "Hot Tub",
+                "Fireplace",
+                "Pet Friendly"
+            ],
+            "amenities": [
+                "WiFi",
+                "Kitchen",
+                "TV",
+                "Washer",
+                "Parking"
+            ],
+            "type": "outside",
+            "bookingsThisMonth": 8,
+            "isFeatured": false
+        },
+        {
+            "id": 3,
+            "title": "Modern City Villa",
+            "price": 380,
+            "location": "Barcelona, Spain",
+            "description": "This sleek modern villa in the heart of the city offers luxury living with rooftop access, smart home features, and designer furnishings.",
+            "images": [
+                "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1980&q=80",
+                "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80"
+            ],
+            "rating": 4.7,
+            "bedrooms": 3,
+            "bathrooms": 3,
+            "guests": 6,
+            "size": "2400 sq ft",
+            "features": [
+                "Rooftop Terrace",
+                "Smart Home",
+                "City View",
+                "Air Conditioning"
+            ],
+            "amenities": [
+                "WiFi",
+                "Kitchen",
+                "TV",
+                "Washer",
+                "Parking",
+                "Gym"
+            ],
+            "type": "outside",
+            "bookingsThisMonth": 10,
+            "isFeatured": false
+        },
+        {
+            "id": 4,
+            "title": "Tropical Paradise Villa",
+            "price": 550,
+            "location": "Phuket, Thailand",
+            "description": "Experience luxury in this tropical villa with direct beach access, private chef services, and an infinity pool overlooking the ocean.",
+            "images": [
+                "https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80",
+                "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+            ],
+            "rating": 4.9,
+            "bedrooms": 4,
+            "bathrooms": 4,
+            "guests": 8,
+            "size": "3200 sq ft",
+            "features": [
+                "Private Pool",
+                "Beach Front",
+                "Private Chef",
+                "Spa Services"
+            ],
+            "amenities": [
+                "WiFi",
+                "Kitchen",
+                "TV",
+                "Washer",
+                "Parking",
+                "Hot Tub",
+                "Gym"
+            ],
+            "type": "resort",
+            "bookingsThisMonth": 15,
+            "isFeatured": true
+        },
+        {
+            "id": 5,
+            "title": "Secluded Forest Villa",
+            "price": 290,
+            "location": "Portland, Oregon",
+            "description": "This charming villa is surrounded by nature, offering privacy, tranquility, and beautiful forest views from every window.",
+            "images": [
+                "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1600566752229-250ed79470b8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+                "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2053&q=80"
+            ],
+            "rating": 4.5,
+            "bedrooms": 2,
+            "bathrooms": 1,
+            "guests": 4,
+            "size": "1500 sq ft",
+            "features": [
+                "Forest View",
+                "Fireplace",
+                "Hiking Trails",
+                "Pet Friendly"
+            ],
+            "amenities": [
+                "WiFi",
+                "Kitchen",
+                "TV",
+                "Parking"
+            ],
+            "type": "outside",
+            "bookingsThisMonth": 6,
+            "isFeatured": false
+        }
+    ]
+}
