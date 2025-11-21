@@ -443,6 +443,8 @@ nav a:hover {
     position: relative;
     padding-bottom: 0.5rem;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
 }
 
 .villa-card:hover,
@@ -647,6 +649,9 @@ nav a:hover {
     padding: 1.6rem 1.3rem 0.7rem 1.3rem;
     position: relative;
     z-index: 3;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .villa-title {
@@ -700,7 +705,7 @@ nav a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1.1rem;
+    margin-top: auto;
     gap: 0.7rem;
 }
 
