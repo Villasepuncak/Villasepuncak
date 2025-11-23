@@ -1,6 +1,9 @@
 // Sample villa data (would normally come from villas.json)
 let villasData = { villas: [] };
 
+// Make villasData globally available for pdf-generator.js
+window.villasData = villasData;
+
 // DOM Elements
 const villasGrid = document.querySelector('.villas-grid');
 const featuredVilla = document.querySelector('.featured-villa');
@@ -19,6 +22,13 @@ const childrenInput = document.getElementById('children');
 const childrenAgesContainer = document.getElementById('children-ages-container');
 const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
 const navLinks = document.querySelector('.nav-links');
+const whatsappBookingModal = document.getElementById('whatsapp-booking-modal');
+const whatsappBookingForm = document.getElementById('whatsapp-booking-form');
+const whatsappCheckInInput = document.getElementById('whatsapp-check-in');
+const whatsappCheckOutInput = document.getElementById('whatsapp-check-out');
+
+// Store current villa ID for WhatsApp booking
+let currentWhatsappVillaId = null;
 
 // State
 let favoriteVillas = JSON.parse(localStorage.getItem('favoriteVillas')) || [];
@@ -30,6 +40,7 @@ async function loadVillaData() {
         const response = await fetch('villas.json');
         const data = await response.json();
         villasData = data;
+        window.villasData = villasData; // Update global reference
         currentVillas = [...villasData.villas];
         return data;
     } catch (error) {
@@ -70,7 +81,7 @@ function renderVillas() {
             </div>
             <div class="villa-info">
                 <h3 class="villa-title">${villa.title}</h3>
-                <p class="villa-price">Rb ${formattedPrice} <span>/ malam</span></p>
+                <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
                 <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${villa.location}</p>
                 <div class="villa-features">
                     ${villa.features.map(feature => `
@@ -114,7 +125,7 @@ function renderFeaturedVilla() {
         </div>
         <div class="villa-info">
             <h3 class="villa-title">${featured.title}</h3>
-            <p class="villa-price">Rb ${formattedPrice} <span>/ malam</span></p>
+            <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
             <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${featured.location}</p>
             <p class="villa-description">${featured.description}</p>
             <div class="villa-features">
@@ -146,9 +157,8 @@ function renderFeaturedVilla() {
 
     document.querySelector('.featured-villa .whatsapp-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        const id = parseInt(e.target.dataset.id);
-        const villa = villasData.villas.find(v => v.id === id);
-        shareViaWhatsApp(villa);
+        const villaId = parseInt(e.target.closest('.whatsapp-btn').dataset.id);
+        openWhatsAppBookingModal(villaId);
     });
 
     // Make the entire featured villa div clickable
@@ -198,7 +208,7 @@ function openVillaModal(id) {
             <div class="villa-content">
                 <h2>${villa.title}</h2>
                 <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${villa.location}</p>
-                <p class="villa-price">Rb ${formattedPrice} <span></span>/ malam</span></p>
+                <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
                 <div class="villa-rating">
                     ${renderStars(villa.rating)}
                     <span>(${villa.rating})</span>
@@ -270,8 +280,9 @@ function openVillaModal(id) {
     });
 
     // Add event listeners to modal buttons
-    document.querySelector('.modal-actions .whatsapp-btn')?.addEventListener('click', () => {
-        shareViaWhatsApp(villa);
+    document.querySelector('.modal-actions .whatsapp-btn')?.addEventListener('click', (e) => {
+        const villaId = parseInt(e.target.closest('.whatsapp-btn').dataset.id);
+        openWhatsAppBookingModal(villaId);
     });
 
     document.querySelector('.modal-actions .fav-btn')?.addEventListener('click', (e) => {
@@ -302,18 +313,93 @@ function openVillaModal(id) {
     villaModal.classList.add('active');
 }
 
-// Share villa via WhatsApp
-function shareViaWhatsApp(villa) {
-    const message = `I'm interested in this villa:\n\n*${villa.title}*\n\nHarga: Rb ${villa.price}/malam\nLocation: ${villa.location}\nRating: ${villa.rating}\n\n${villa.description.substring(0, 100)}...`;
-    const encodedMessage = encodeURIComponent(message);
-    const encodedImage = encodeURIComponent(villa.images[0]);
-    const whatsappUrl = `https://wa.me/+6283169371998?text=${encodedMessage}`;
 
-    window.open(whatsappUrl, '_blank');
+
+
+
+
+
+
+
+
+
+
+
+// Open WhatsApp booking modal
+function openWhatsAppBookingModal(villaId) {
+    const villa = villasData.villas.find(v => v.id === villaId);
+    if (!villa) {
+        alert('Villa not found.');
+        return;
+    }
+
+    currentWhatsappVillaId = villaId;
+
+    // Reset form
+    if (whatsappBookingForm) {
+        whatsappBookingForm.reset();
+    }
+
+    // Open modal
+    if (whatsappBookingModal) {
+        whatsappBookingModal.classList.add('active');
+    }
 }
 
-// Share multiple villas via WhatsApp
-function shareFavoritesViaWhatsApp() {
+// Send villa details via WhatsApp with booking dates
+function sendVillaToWhatsApp(villaId, checkInDate = null, checkOutDate = null) {
+    const villa = villasData.villas.find(v => v.id === villaId);
+    if (!villa) {
+        alert('Villa not found.');
+        return;
+    }
+
+    // Helper for short month format e.g., 11 Nov 2025
+    const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const fmtShort = (d) => `${d.getDate()} ${monthsShort[d.getMonth()]} ${d.getFullYear()}`;
+
+    let messageLines = [];
+
+    if (checkInDate && checkOutDate) {
+        const nights = Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+        const nightsStr = String(nights).padStart(2, '0');
+
+        messageLines.push('🚨🚨🚨🚨🚨');
+        messageLines.push(`${villa.title}`);
+        messageLines.push(`Location: ${villa.location}`);
+        messageLines.push(`Rating: ${villa.rating}`);
+        messageLines.push('');
+        messageLines.push(`Check-In: ${fmtShort(checkInDate)}`);
+        messageLines.push(`Check-Out: ${fmtShort(checkOutDate)}`);
+        messageLines.push(`Total: ${nightsStr} Malam`);
+        messageLines.push('');
+        messageLines.push('Dibantu Cek Availability Kak');
+        messageLines.push('*VillaSepuncak*');
+    } else {
+        // Fallback without dates
+        messageLines.push('🚨🚨🚨🚨🚨');
+        messageLines.push(`${villa.title}`);
+        messageLines.push(`Location: ${villa.location}`);
+        messageLines.push(`Rating: ${villa.rating}`);
+        messageLines.push('');
+        messageLines.push('Dibantu Cek Availability Kak');
+        messageLines.push('*VillaSepuncak*');
+    }
+
+    const message = messageLines.join('\n');
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/+6282210081028?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, '_blank');
+
+    // Close modal after sending
+    if (whatsappBookingModal) {
+        whatsappBookingModal.classList.remove('active');
+    }
+}
+
+// Share multiple villas via WhatsApp (for "Send All" button)
+async function sendAllFavoritesToWhatsApp() {
     if (favoriteVillas.length === 0) {
         alert('Your favorites list is empty.');
         return;
@@ -324,14 +410,14 @@ function shareFavoritesViaWhatsApp() {
     favoriteVillas.forEach(villaId => {
         const villa = villasData.villas.find(v => v.id === villaId);
         if (villa) {
-            message += `*${villa.title}*\nHarga: Rb ${villa.price}/malam\nRating: ${villa.rating}\n\n`;
+            message += `*${villa.title}*\nLocation: ${villa.location}\nRating: ${villa.rating}\n\n`;
         }
     });
 
     message += "Please send me more information about these properties.";
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/+6283169371998?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/+6282210081028?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
 }
@@ -374,12 +460,13 @@ function renderFavModal() {
 
         const favItem = document.createElement('div');
         favItem.className = 'fav-villa-item';
+        const favFormattedPrice = villa.price.toLocaleString('en-US');
         favItem.innerHTML = `
             <div class="fav-villa-info">
                 <img src="${villa.images[0]}" alt="${villa.title}" class="fav-villa-img">
                 <div>
                     <h4>${villa.title}</h4>
-                    <p>Rb ${villa.price} / malam</p>
+                    <p>Starts From ${favFormattedPrice}/Malam</p>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -406,9 +493,9 @@ function renderFavModal() {
     // Add event listeners to WhatsApp buttons for each favorite villa
     document.querySelectorAll('.whatsapp-fav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const id = parseInt(e.target.closest('button').dataset.id);
-            const villa = villasData.villas.find(v => v.id === id);
-            shareViaWhatsApp(villa);
+            const villaId = parseInt(btn.dataset.id);
+            if (!villaId) return;
+            openWhatsAppBookingModal(villaId);
         });
     });
 }
@@ -593,9 +680,9 @@ function addVillaCardEventListeners() {
     document.querySelectorAll('.whatsapp-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const id = parseInt(e.target.closest('button').dataset.id);
-            const villa = villasData.villas.find(v => v.id === id);
-            shareViaWhatsApp(villa);
+            const villaId = parseInt(btn.dataset.id);
+            if (!villaId) return;
+            openWhatsAppBookingModal(villaId);
         });
     });
 
@@ -662,6 +749,9 @@ function setupEventListeners() {
     closeModalBtn.addEventListener('click', () => {
         villaModal.classList.remove('active');
         favModal.classList.remove('active');
+        if (whatsappBookingModal) {
+            whatsappBookingModal.classList.remove('active');
+        }
     });
 
     // Close modal when clicking outside
@@ -672,11 +762,14 @@ function setupEventListeners() {
         if (e.target === favModal) {
             favModal.classList.remove('active');
         }
+        if (whatsappBookingModal && e.target === whatsappBookingModal) {
+            whatsappBookingModal.classList.remove('active');
+        }
     });
 
     // Close modal when clicking on close buttons (using event delegation)
     document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('close-modal')) {
+        if (e.target.classList.contains('close-modal') || e.target.closest('.btn-cancel')) {
             // Find which modal this close button belongs to
             const modal = e.target.closest('.modal');
             if (modal) {
@@ -692,13 +785,74 @@ function setupEventListeners() {
     });
 
     // Share all favorites button
-    whatsappAllBtn.addEventListener('click', shareFavoritesViaWhatsApp);
+    whatsappAllBtn.addEventListener('click', sendAllFavoritesToWhatsApp);
 
     // Children input change
     childrenInput.addEventListener('input', handleChildrenAges);
 
     // Booking form submission
     bookingForm.addEventListener('submit', handleBookingSubmit);
+
+    // Initialize flatpickr for WhatsApp booking form
+    if (whatsappCheckInInput && whatsappCheckOutInput) {
+        let whatsappCheckInPicker = null;
+        let whatsappCheckOutPicker = null;
+
+        // Initialize check-in date picker
+        whatsappCheckInPicker = flatpickr(whatsappCheckInInput, {
+            minDate: 'today',
+            dateFormat: 'Y-m-d',
+            locale: 'id',
+            onChange: function (selectedDates) {
+                // Update check-out min date to be after check-in
+                if (selectedDates[0]) {
+                    const minCheckOut = new Date(selectedDates[0]);
+                    minCheckOut.setDate(minCheckOut.getDate() + 1);
+                    if (whatsappCheckOutPicker) {
+                        whatsappCheckOutPicker.set('minDate', minCheckOut);
+                        // Auto-open the check-out picker to enhance UX
+                        whatsappCheckOutPicker.open();
+                    }
+                }
+            }
+        });
+
+        // Initialize check-out date picker
+        whatsappCheckOutPicker = flatpickr(whatsappCheckOutInput, {
+            minDate: 'today',
+            dateFormat: 'Y-m-d',
+            locale: 'id'
+        });
+    }
+
+    // WhatsApp booking form submission
+    if (whatsappBookingForm) {
+        whatsappBookingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const checkIn = whatsappCheckInInput?.value;
+            const checkOut = whatsappCheckOutInput?.value;
+
+            if (!checkIn || !checkOut) {
+                alert('Please select both check-in and check-out dates.');
+                return;
+            }
+
+            // Validate that check-out is after check-in
+            const checkInDate = new Date(checkIn);
+            const checkOutDate = new Date(checkOut);
+
+            if (checkOutDate <= checkInDate) {
+                alert('Check-out date must be after check-in date.');
+                return;
+            }
+
+            // Send WhatsApp message with dates (short month + auto nights)
+            if (currentWhatsappVillaId) {
+                sendVillaToWhatsApp(currentWhatsappVillaId, checkInDate, checkOutDate);
+            }
+        });
+    }
 
     // Mobile menu button
     mobileMenuBtn.addEventListener('click', () => {

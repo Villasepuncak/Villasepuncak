@@ -1412,6 +1412,135 @@ footer {
     }
 }
 
+/* WhatsApp Booking Modal Styles */
+#whatsapp-booking-modal .modal-content {
+    max-width: 500px;
+    width: 90%;
+}
+
+#whatsapp-booking-modal .modal-body {
+    padding: 2rem;
+}
+
+#whatsapp-booking-modal .section-title {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+#whatsapp-booking-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#whatsapp-booking-form .form-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+#whatsapp-booking-form .form-group label i {
+    color: var(--secondary-color);
+}
+
+#whatsapp-booking-form .form-group input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e0e6ed;
+    border-radius: 10px;
+    font-size: 1rem;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    cursor: pointer;
+}
+
+#whatsapp-booking-form .form-group input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(49, 79, 160, 0.1);
+    background-color: white;
+}
+
+#whatsapp-booking-form .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: flex-end;
+}
+
+#whatsapp-booking-form .submit-btn {
+    padding: 0.875rem 2rem;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--secondary-color);
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#whatsapp-booking-form .submit-btn:hover {
+    background-color: #2d3f7a;
+}
+
+/* WhatsApp Booking Modal Close Button (X icon) */
+#whatsapp-booking-modal .close-modal.btn-cancel {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    z-index: 1001;
+}
+
+#whatsapp-booking-modal .close-modal.btn-cancel:hover {
+    color: #374151;
+}
+
+@media (max-width: 600px) {
+    #whatsapp-booking-modal .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    #whatsapp-booking-modal .modal-body {
+        padding: 1.5rem;
+    }
+
+    #whatsapp-booking-modal .close-modal.btn-cancel {
+        top: 0.75rem;
+        right: 0.75rem;
+        font-size: 1.5rem;
+        width: 2rem;
+        height: 2rem;
+    }
+
+    #whatsapp-booking-form .form-actions {
+        flex-direction: column;
+    }
+
+    #whatsapp-booking-form .submit-btn {
+        width: 100%;
+    }
+}
+
 @media (max-width: 400px) {
 
     .villa-img {
