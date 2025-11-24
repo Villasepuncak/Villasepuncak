@@ -34,18 +34,31 @@ let currentWhatsappVillaId = null;
 let favoriteVillas = JSON.parse(localStorage.getItem('favoriteVillas')) || [];
 let currentVillas = [];
 
-// Load villa data from JSON file
+// Load villa data from Supabase instead of villas.json
 async function loadVillaData() {
     try {
-        const response = await fetch('villas.json');
-        const data = await response.json();
-        villasData = data;
+        if (!window.supabase) {
+            console.error('Supabase client not initialized. Include supabase-js and supabase-init.js');
+            return { villas: [] };
+        }
+
+        const { data, error } = await window.supabase
+            .from('villas')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        villasData = { villas: data || [] };
         window.villasData = villasData; // Update global reference
         currentVillas = [...villasData.villas];
-        return data;
+        return villasData;
     } catch (error) {
-        console.error('Error loading villa data:', error);
-        return { villas: [] };
+        console.error('Error loading villa data from Supabase:', error);
+        villasData = { villas: [] };
+        window.villasData = villasData;
+        currentVillas = [];
+        return villasData;
     }
 }
 
@@ -71,11 +84,12 @@ function renderVillas() {
 
     currentVillas.forEach(villa => {
         const formattedPrice = villa.price.toLocaleString('en-US');
+        const firstImg = (Array.isArray(villa.images) && villa.images[0]) ? villa.images[0] : 'villasepuncak.webp';
         const villaCard = document.createElement('div');
         villaCard.className = 'villa-card';
         villaCard.innerHTML = `
             <div style="position:relative;">
-                <img src="${villa.images[0]}" alt="${villa.title}" class="villa-img">
+                <img src="${firstImg}" alt="${villa.title}" class="villa-img">
                 <div class="villa-img-overlay"></div>
                 ${villa.isFeatured ? '<span class="villa-badge">Featured</span>' : (villa.bookingsThisMonth > 10 ? '<span class="villa-badge" style="background:var(--secondary-color);">Most Booked</span>' : '')}
             </div>
@@ -84,7 +98,7 @@ function renderVillas() {
                 <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
                 <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${villa.location}</p>
                 <div class="villa-features">
-                    ${villa.features.map(feature => `
+                    ${(villa.features || []).map(feature => `
                         <span class="feature-tag">${feature}</span>
                     `).join('')}
                 </div>
@@ -117,9 +131,10 @@ function renderFeaturedVilla() {
     const featured = villasData.villas.find(villa => villa.isFeatured);
     if (!featured) return;
     const formattedPrice = featured.price.toLocaleString('en-US');
+    const featuredImg = (Array.isArray(featured.images) && featured.images[0]) ? featured.images[0] : 'villasepuncak.webp';
     featuredVilla.innerHTML = `
         <div style="position:relative;">
-            <img src="${featured.images[0]}" alt="${featured.title}" class="villa-img">
+            <img src="${featuredImg}" alt="${featured.title}" class="villa-img">
             <div class="villa-img-overlay"></div>
             <span class="villa-badge">Featured</span>
         </div>
@@ -129,7 +144,7 @@ function renderFeaturedVilla() {
             <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${featured.location}</p>
             <p class="villa-description">${featured.description}</p>
             <div class="villa-features">
-                ${featured.features.map(feature => `
+                ${(featured.features || []).map(feature => `
                     <span class="feature-tag">${feature}</span>
                 `).join('')}
             </div>
@@ -194,12 +209,13 @@ function openVillaModal(id) {
     const villa = villasData.villas.find(v => v.id === id);
     if (!villa) return;
     const formattedPrice = villa.price.toLocaleString('en-US');
+    const imgs = (Array.isArray(villa.images) && villa.images.length > 0) ? villa.images : ['villasepuncak.webp'];
     modalContent.innerHTML = `
         <div class="villa-details">
             <div class="villa-gallery">
-                <img src="${villa.images[0]}" alt="${villa.title}" class="main-image" id="main-image">
+                <img src="${imgs[0]}" alt="${villa.title}" class="main-image" id="main-image">
                 <div class="thumbnail-container">
-                    ${villa.images.map((img, index) => `
+                    ${imgs.map((img, index) => `
                         <img src="${img}" alt="Thumbnail ${index + 1}" class="thumbnail ${index === 0 ? 'active' : ''}" data-index="${index}">
                     `).join('')}
                 </div>
@@ -237,7 +253,7 @@ function openVillaModal(id) {
                 
                 <h3>Features</h3>
                 <div class="amenities-list">
-                    ${villa.features.map(feature => `
+                    ${(villa.features || []).map(feature => `
                         <div class="amenity-item">
                             <i class="fas fa-check"></i>
                             <span>${feature}</span>
@@ -247,7 +263,7 @@ function openVillaModal(id) {
                 
                 <h3>Amenities</h3>
                 <div class="amenities-list">
-                    ${villa.amenities.map(amenity => `
+                    ${(villa.amenities || []).map(amenity => `
                         <div class="amenity-item">
                             <i class="fas fa-check"></i>
                             <span>${amenity}</span>
