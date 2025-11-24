@@ -3,9 +3,18 @@
   const rowTpl = document.getElementById('row-template');
   const cardsContainer = document.getElementById('villas-cards');
   const tabs = document.querySelectorAll('.tab-btn');
+  const topTabs = document.querySelectorAll('.top-tab-btn');
+  const topSections = document.querySelectorAll('.top-tab-section');
+  // Logo/Hero elements
+  const logoPreview = document.getElementById('logo-preview');
+  const logoFile = document.getElementById('logo-file');
+  const heroPreviews = document.getElementById('hero-previews');
+  const heroFiles = document.getElementById('hero-files');
   const searchInput = document.getElementById('search');
   const btnRefresh = document.getElementById('btn-refresh');
   const btnNew = document.getElementById('btn-new');
+  // Villas form panel (secondary panel under the list)
+  const villaFormPanel = document.getElementById('villa-form')?.closest('.panel');
 
   const form = document.getElementById('villa-form');
   const formTitle = document.getElementById('form-title');
@@ -41,7 +50,9 @@
 
   let allVillas = [];
   let originalImages = [];
-  let activeTab = 'promoted';
+  let activeTab = 'all';
+  let siteConfig = { logo_url: '', hero_images: [] };
+  let heroImages = [];
 
   function toArrayFromInput(val){
     if(!val) return [];
@@ -49,6 +60,130 @@
       .split(',')
       .map(s=>s.trim())
       .filter(Boolean);
+  }
+
+  // ---------------- Site Config (logo, hero) ----------------
+  async function fetchSiteConfig(){
+    if (!window.supabase) return { logo_url:'', hero_images:[] };
+    const { data, error } = await window.supabase.from('site_config').select('*').limit(1).maybeSingle();
+    if (error && error.code !== 'PGRST116') { // ignore not found
+      console.warn('Failed to fetch site_config', error.message);
+      return { logo_url:'', hero_images:[] };
+    }
+    return data || { logo_url:'', hero_images:[] };
+  }
+
+  async function upsertSiteConfig(cfg){
+    // single-row config: use id=1
+    const payload = { id: 1, logo_url: cfg.logo_url || '', hero_images: cfg.hero_images || [] };
+    const { error } = await window.supabase.from('site_config').upsert(payload, { onConflict: 'id' });
+    if (error) throw error;
+  }
+
+  // --- Storage cleanup helpers ---
+  function urlToSitePath(publicUrl){
+    try {
+      const idx = publicUrl.indexOf('/site/');
+      if (idx >= 0) return decodeURIComponent(publicUrl.substring(idx + '/site/'.length));
+      const idx2 = publicUrl.indexOf('public/site/');
+      if (idx2 >= 0) return decodeURIComponent(publicUrl.substring(idx2 + 'public/site/'.length));
+      return null;
+    } catch { return null; }
+  }
+
+  async function listBucketPaths(bucket, folder){
+    try {
+      const { data, error } = await window.supabase.storage.from(bucket).list(folder, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+      if (error) { console.warn('List error', bucket, folder, error.message); return []; }
+      return (data || []).filter(it => it?.name && !it?.id) // files only
+        .map(it => (folder ? folder + '/' : '') + it.name);
+    } catch(e) { console.warn('List exception', bucket, folder, e); return []; }
+  }
+
+  async function cleanupUnusedStorage(){
+    // Build used sets from DB and site config
+    const usedVillasUrls = new Set();
+    (allVillas || []).forEach(v => (Array.isArray(v.images) ? v.images : []).forEach(u => usedVillasUrls.add(u)));
+    const usedSiteUrls = new Set([...(siteConfig.hero_images || [])]);
+    if (siteConfig.logo_url) usedSiteUrls.add(siteConfig.logo_url);
+
+    const usedVillasPaths = new Set(Array.from(usedVillasUrls).map(u => urlToBucketPath(u)).filter(Boolean));
+    const usedSitePaths = new Set(Array.from(usedSiteUrls).map(u => urlToSitePath(u)).filter(Boolean));
+
+    // List current storage objects
+    const villasFiles = await listBucketPaths('villas', 'uploads');
+    const siteHeroFiles = await listBucketPaths('site', 'hero');
+    const siteLogoFiles = await listBucketPaths('site', 'logo');
+
+    // Compute deletions
+    const delVillas = villasFiles.filter(p => !usedVillasPaths.has(p));
+    const delSite = [...siteHeroFiles, ...siteLogoFiles].filter(p => !usedSitePaths.has(p));
+
+    // Remove
+    if (delVillas.length){
+      const { error } = await window.supabase.storage.from('villas').remove(delVillas);
+      if (error) console.warn('Failed deleting some villas files', error.message);
+    }
+    if (delSite.length){
+      const { error } = await window.supabase.storage.from('site').remove(delSite);
+      if (error) console.warn('Failed deleting some site files', error.message);
+    }
+  }
+
+  async function saveHeroImages(){
+    try {
+      siteConfig.hero_images = heroImages;
+      await upsertSiteConfig(siteConfig);
+      await cleanupUnusedStorage();
+    } catch(e){ console.error('Auto-save hero images failed', e); }
+  }
+
+  function renderLogo(){
+    if (logoPreview) logoPreview.src = siteConfig.logo_url || '';
+  }
+
+  function renderHeroPreviews(){
+    if (!heroPreviews) return;
+    heroPreviews.innerHTML = '';
+    (heroImages || []).forEach((url, idx) => {
+      const wrap = document.createElement('div'); wrap.className = 'preview-item';
+      const img = document.createElement('img'); img.src = url; wrap.appendChild(img);
+      const btn = document.createElement('button'); btn.type='button'; btn.className='preview-remove'; btn.innerHTML='<i class="fa fa-xmark"></i>';
+      btn.addEventListener('click', async () => {
+        heroImages.splice(idx,1);
+        renderHeroPreviews();
+        await saveHeroImages();
+      });
+      wrap.appendChild(btn);
+      heroPreviews.appendChild(wrap);
+    });
+  }
+
+  async function uploadLogo(file){
+    const bucket = 'site';
+    const ext = file.name.split('.').pop();
+    const path = `logo/logo_${Date.now()}.${ext}`;
+    const { error: upErr } = await window.supabase.storage.from(bucket).upload(path, file, { cacheControl:'3600', upsert:false, contentType:file.type });
+    if (upErr) throw upErr;
+    const { data } = window.supabase.storage.from(bucket).getPublicUrl(path);
+    siteConfig.logo_url = data?.publicUrl || '';
+    renderLogo();
+    await upsertSiteConfig(siteConfig);
+    await cleanupUnusedStorage();
+  }
+
+  async function uploadHeroFiles(files){
+    const bucket = 'site';
+    for (const file of files){
+      const ext = file.name.split('.').pop();
+      const path = `hero/hero_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await window.supabase.storage.from(bucket).upload(path, file, { cacheControl:'3600', upsert:false, contentType:file.type });
+      if (upErr) throw upErr;
+      const { data } = window.supabase.storage.from(bucket).getPublicUrl(path);
+      if (data?.publicUrl) heroImages.push(data.publicUrl);
+    }
+    renderHeroPreviews();
+    await saveHeroImages();
   }
   function toInputFromArray(arr){
     if(!Array.isArray(arr)) return '';
@@ -94,7 +229,14 @@
   function renderCards(rows){
     if (!cardsContainer) return;
     // Filter by tab
-    const list = activeTab === 'promoted' ? rows.filter(v => !!v.isFeatured) : rows;
+    const listBase = activeTab === 'promoted' ? rows.filter(v => !!v.isFeatured) : rows;
+    // Sort newest first (by id desc)
+    const list = [...listBase].sort((a, b) => (b.id || 0) - (a.id || 0));
+    // Empty state for Promoted tab
+    if (activeTab === 'promoted' && list.length === 0) {
+      cardsContainer.innerHTML = '<div class="muted" style="padding: 12px;">No Villa Available Yet</div>';
+      return;
+    }
     cardsContainer.innerHTML = '';
     list.forEach(v => {
       const card = document.createElement('div');
@@ -137,18 +279,14 @@
       }
       body.appendChild(h3); body.appendChild(meta1); body.appendChild(meta2); body.appendChild(tags);
 
-      // actions
+      // actions (Edit, Delete only)
       const actions = document.createElement('div');
       actions.className = 'actions';
       const btnE = document.createElement('button'); btnE.className='btn small'; btnE.innerHTML='<i class="fa fa-pen"></i> Edit';
       const btnD = document.createElement('button'); btnD.className='btn small danger'; btnD.innerHTML='<i class="fa fa-trash"></i> Delete';
-      const btnP = document.createElement('button'); btnP.className='btn small';
-      if (v.isFeatured) { btnP.innerHTML='<i class="fa fa-star"></i> Promoted'; btnP.disabled = true; }
-      else { btnP.innerHTML='<i class="fa fa-bullhorn"></i> Promote'; }
       btnE.addEventListener('click', () => startEdit(v));
       btnD.addEventListener('click', () => confirmDelete(v));
-      if (!v.isFeatured) btnP.addEventListener('click', () => promoteVilla(v.id));
-      actions.appendChild(btnE); actions.appendChild(btnP); actions.appendChild(btnD);
+      actions.appendChild(btnE); actions.appendChild(btnD);
 
       card.appendChild(imgsWrap);
       card.appendChild(body);
@@ -159,7 +297,7 @@
 
   async function fetchVillas(){
     if(!window.supabase){
-      alert('Supabase is not initialized. Please set SUPABASE_URL and SUPABASE_ANON_KEY in supabase-init.js');
+      console.error('Supabase is not initialized. Please set SUPABASE_URL and SUPABASE_ANON_KEY in supabase-init.js');
       return [];
     }
     const { data, error } = await window.supabase
@@ -168,7 +306,6 @@
       .order('id', { ascending: true });
     if(error){
       console.error('Error fetching villas', error);
-      alert('Failed to load villas: ' + error.message);
       return [];
     }
     return data || [];
@@ -354,7 +491,7 @@
       resetForm();
     } catch(err){
       console.error('Save failed', err);
-      alert('Save failed: ' + err.message);
+      // removed alert; error already logged
     }
   }
 
@@ -408,18 +545,20 @@
       if(String(fldId.value) === String(v.id)) resetForm();
     } catch(err){
       console.error('Delete failed', err);
-      alert('Delete failed: ' + err.message);
+      // removed alert; error already logged
     }
   }
 
   // Events (bound after auth)
   function bindEventsAfterAuth(){
-    searchInput.addEventListener('input', filterRows);
-    btnRefresh.addEventListener('click', loadAndRender);
-    btnNew.addEventListener('click', resetForm);
-    btnCancel.addEventListener('click', resetForm);
-    form.addEventListener('submit', saveForm);
+    // List and form
+    if (searchInput) searchInput.addEventListener('input', filterRows);
+    if (btnRefresh) btnRefresh.addEventListener('click', loadAndRender);
+    if (btnNew) btnNew.addEventListener('click', resetForm);
+    if (btnCancel) btnCancel.addEventListener('click', resetForm);
+    if (form) form.addEventListener('submit', saveForm);
     if (fileImages) fileImages.addEventListener('change', uploadImagesToSupabase);
+
     // Mutually exclusive status flags
     const statusBoxes = [fldIsFeatured, fldIsBaru, fldIsHot].filter(Boolean);
     statusBoxes.forEach(box => {
@@ -429,22 +568,57 @@
         }
       });
     });
-    // Tabs
+
+    // Promoted/All tabs
     tabs.forEach(btn => btn.addEventListener('click', () => {
       tabs.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeTab = btn.dataset.tab;
       filterRows();
     }));
+
+    // Top-level tabs: Villas / Logo / Hero
+    topTabs.forEach(btn => btn.addEventListener('click', () => {
+      topTabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.topTab;
+      // Show the selected top section
+      topSections.forEach(sec => sec.classList.toggle('hidden', sec.id !== `tab-${tab}`));
+      // Hide the villas form panel when not on 'villas' tab
+      if (villaFormPanel) {
+        const isVillas = tab === 'villas';
+        villaFormPanel.classList.toggle('hidden', !isVillas);
+      }
+    }));
+
+    // Logo upload
+    if (logoFile) logoFile.addEventListener('change', async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      try { await uploadLogo(f); /* success toast removed */ }
+      catch(err){ console.error('Logo upload failed:', err); }
+      finally { logoFile.value=''; }
+    });
+
+    // Hero images upload (auto-save)
+    if (heroFiles) heroFiles.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      try { await uploadHeroFiles(files); }
+      catch(err){ console.error('Hero upload failed:', err); }
+      finally { heroFiles.value=''; }
+    });
   }
 
   function initDashboard(){
     resetForm();
     bindEventsAfterAuth();
-    // default tab: promoted
-    activeTab = 'promoted';
-    tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === 'promoted'));
+    // default tab: all
+    activeTab = 'all';
+    tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === 'all'));
     loadAndRender();
+    // Load site config
+    fetchSiteConfig().then(cfg => { siteConfig = { logo_url: cfg.logo_url || '', hero_images: cfg.hero_images || [] }; heroImages = [...(siteConfig.hero_images||[])]; renderLogo(); renderHeroPreviews(); });
   }
 
   async function promoteVilla(id){
@@ -458,7 +632,6 @@
       await loadAndRender();
     } catch(err){
       console.error('Promote failed', err);
-      alert('Failed to promote villa: ' + err.message);
     }
   }
 
@@ -491,11 +664,11 @@ async function uploadImagesToSupabase(){
   const files = document.getElementById('image-files')?.files;
   const imagesTextarea = document.getElementById('images');
   if(!files || files.length === 0){
-    alert('Please choose one or more images first.');
+    // no files chosen; skip without alert
     return;
   }
   if(!window.supabase){
-    alert('Supabase is not initialized.');
+    console.error('Supabase is not initialized.');
     return;
   }
 
@@ -509,7 +682,7 @@ async function uploadImagesToSupabase(){
       .from(bucket)
       .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
     if(upErr){
-      alert('Upload failed: ' + upErr.message);
+      console.error('Upload failed:', upErr);
       return;
     }
     const { data } = window.supabase.storage.from(bucket).getPublicUrl(path);

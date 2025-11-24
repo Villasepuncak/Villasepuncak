@@ -159,6 +159,7 @@ nav a:hover {
     height: 100%;
     top: 0;
     left: 0;
+    z-index: 0;
 }
 
 .intro-image {
@@ -185,6 +186,7 @@ nav a:hover {
     z-index: 2;
     top: 0;
     left: 0;
+    pointer-events: none;
 }
 
 .intro-content {
@@ -198,7 +200,7 @@ nav a:hover {
     transform: translate(-50%, -50%);
     text-align: center;
     width: 100%;
-    z-index: 3;
+    z-index: 10;
     color: white;
     padding: clamp(0px, 2vw, 10px) clamp(0px, 2vw, 10px);
 }

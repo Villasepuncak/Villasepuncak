@@ -89,6 +89,31 @@ body {
     gap: 16px;
 }
 
+.top-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.top-tab-btn {
+    background: #101625;
+    color: #cbd5e1;
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.top-tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.top-tab-section.hidden {
+    display: none;
+}
+
 .panel {
     background: var(--panel);
     border: 1px solid var(--border);

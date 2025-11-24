@@ -34,6 +34,99 @@ let currentWhatsappVillaId = null;
 let favoriteVillas = JSON.parse(localStorage.getItem('favoriteVillas')) || [];
 let currentVillas = [];
 
+// --- Site config (logo and hero images) ---
+async function loadSiteConfig() {
+    if (!window.supabase) return { logo_url: '', hero_images: [] };
+    try {
+        const { data, error } = await window.supabase
+            .from('site_config')
+            .select('*')
+            .limit(1)
+            .maybeSingle();
+        if (error && error.code !== 'PGRST116') throw error;
+        return data || { logo_url: '', hero_images: [] };
+    } catch (e) {
+        console.warn('Site config fetch failed:', e);
+        return { logo_url: '', hero_images: [] };
+    }
+}
+
+function applySiteConfig(cfg) {
+    try {
+        const logoImg = document.querySelector('header .logo img');
+        if (logoImg && cfg.logo_url) {
+            logoImg.src = cfg.logo_url;
+        }
+        if (Array.isArray(cfg.hero_images) && cfg.hero_images.length) {
+            renderIntroImages(cfg.hero_images);
+            startIntroSlideshow();
+            activateIntroText();
+        } else {
+            // fallback to existing behavior if no hero images configured
+            if (typeof initializeIntroSection === 'function') initializeIntroSection();
+            startIntroSlideshow();
+            activateIntroText();
+        }
+    } catch (e) {
+        console.warn('Failed to apply site config:', e);
+    }
+}
+
+function renderIntroImages(images) {
+    const introImagesContainer = document.getElementById('introImages');
+    if (!introImagesContainer) return;
+    introImagesContainer.innerHTML = '';
+    images.forEach((url, index) => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = `Hero ${index + 1}`;
+        img.classList.add('intro-image');
+        if (index === 0) img.classList.add('active');
+        introImagesContainer.appendChild(img);
+    });
+}
+
+// --- Intro images slideshow ---
+let introSlideTimer = null;
+function startIntroSlideshow(intervalMs = 5000) {
+    const container = document.getElementById('introImages');
+    if (!container) return;
+    const slides = Array.from(container.querySelectorAll('.intro-image'));
+    // Clear previous timer
+    if (introSlideTimer) { clearInterval(introSlideTimer); introSlideTimer = null; }
+    if (!slides || slides.length < 2) return; // nothing to cycle
+
+    let current = slides.findIndex(s => s.classList.contains('active'));
+    if (current < 0) { current = 0; slides[0].classList.add('active'); }
+
+    introSlideTimer = setInterval(() => {
+        const prev = current;
+        current = (current + 1) % slides.length;
+        slides[prev]?.classList.remove('active');
+        slides[current]?.classList.add('active');
+    }, intervalMs);
+}
+
+// Activate intro text animations so elements become visible
+function activateIntroText() {
+    try {
+        const headlines = document.querySelectorAll('.intro-headline, .intro-subhead, .intro-cta, #scroll-note-btn');
+        const scrollHint = document.getElementById('scrollHint');
+        setTimeout(() => {
+            headlines.forEach(el => {
+                if (!el.id || el.id !== 'scroll-note-btn') {
+                    el.classList.add('active', 'in-view');
+                }
+            });
+            if (scrollHint) scrollHint.classList.add('active');
+            const scrollNoteBtn = document.getElementById('scroll-note-btn');
+            if (scrollNoteBtn) {
+                setTimeout(() => scrollNoteBtn.classList.add('active', 'in-view'), 900);
+            }
+        }, 300);
+    } catch (e) { /* no-op */ }
+}
+
 // Load villa data from Supabase instead of villas.json
 async function loadVillaData() {
     try {
@@ -69,7 +162,13 @@ async function init() {
     renderFeaturedVilla();
     setupEventListeners();
     updateFavCount();
-    initializeIntroSection(); // Ensure intro-section animation and images work
+    // Load and apply site configuration (logo and hero images)
+    try {
+        const cfg = await loadSiteConfig();
+        applySiteConfig(cfg);
+    } catch (e) {
+        console.warn('Failed to load site config', e);
+    }
 }
 
 // Render villas to the grid
@@ -95,7 +194,7 @@ function renderVillas() {
             </div>
             <div class="villa-info">
                 <h3 class="villa-title">${villa.title}</h3>
-                <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
+                <p class="villa-price">Mulai Dari ${formattedPrice}/Malam</p>
                 <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${villa.location}</p>
                 <div class="villa-features">
                     ${(villa.features || []).map(feature => `
@@ -140,7 +239,7 @@ function renderFeaturedVilla() {
         </div>
         <div class="villa-info">
             <h3 class="villa-title">${featured.title}</h3>
-            <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
+            <p class="villa-price">Mulai Dari ${formattedPrice}/Malam</p>
             <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${featured.location}</p>
             <p class="villa-description">${featured.description}</p>
             <div class="villa-features">
@@ -224,7 +323,7 @@ function openVillaModal(id) {
             <div class="villa-content">
                 <h2>${villa.title}</h2>
                 <p class="villa-location"><i class="fas fa-map-marker-alt"></i> ${villa.location}</p>
-                <p class="villa-price">Starts From ${formattedPrice}/Malam</p>
+                <p class="villa-price">Mulai Dari ${formattedPrice}/Malam</p>
                 <div class="villa-rating">
                     ${renderStars(villa.rating)}
                     <span>(${villa.rating})</span>
@@ -482,7 +581,7 @@ function renderFavModal() {
                 <img src="${villa.images[0]}" alt="${villa.title}" class="fav-villa-img">
                 <div>
                     <h4>${villa.title}</h4>
-                    <p>Starts From ${favFormattedPrice}/Malam</p>
+                    <p>Mulai Dari ${favFormattedPrice}/Malam</p>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -948,9 +1047,14 @@ function setupEventListeners() {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    init().catch(error => {
-        console.error('Error initializing app:', error);
-    });
+    init()
+        .catch(error => {
+            console.error('Error initializing app:', error);
+        })
+        .finally(() => {
+            // Ensure intro text becomes visible even if config load failed
+            if (typeof activateIntroText === 'function') activateIntroText();
+        });
 });
 
 
