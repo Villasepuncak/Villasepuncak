@@ -741,6 +741,9 @@ if (checkInInput) {
     flatpickr(checkInInput, {
         minDate: 'today',
         dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'j M Y',
+        disableMobile: true,
         locale: 'id',
         onChange: function (selectedDates) {
             selectedCheckInDate = selectedDates[0] || null;
