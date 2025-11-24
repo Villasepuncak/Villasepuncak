@@ -26,6 +26,9 @@ const whatsappBookingModal = document.getElementById('whatsapp-booking-modal');
 const whatsappBookingForm = document.getElementById('whatsapp-booking-form');
 const whatsappCheckInInput = document.getElementById('whatsapp-check-in');
 const whatsappCheckOutInput = document.getElementById('whatsapp-check-out');
+// Flatpickr instances (global for cross-function control)
+let whatsappCheckInPicker = null;
+let whatsappCheckOutPicker = null;
 
 // Store current villa ID for WhatsApp booking
 let currentWhatsappVillaId = null;
@@ -50,6 +53,28 @@ async function loadSiteConfig() {
         return { logo_url: '', hero_images: [] };
     }
 }
+
+
+
+// Open WhatsApp booking modal for sending ALL favorites (no specific villa)
+function openWhatsAppAllBookingModal() {
+    currentWhatsappVillaId = null;
+    if (whatsappBookingForm) {
+        whatsappBookingForm.reset();
+    }
+    if (whatsappBookingModal) {
+        whatsappBookingModal.classList.add('active');
+    }
+    // Auto-open check-in picker to guide the user
+    if (whatsappCheckInPicker) {
+        setTimeout(() => whatsappCheckInPicker.open(), 0);
+    } else if (whatsappCheckInInput) {
+        // Fallback: focus input to trigger native/open
+        setTimeout(() => whatsappCheckInInput.focus(), 0);
+    }
+}
+
+
 
 function applySiteConfig(cfg) {
     try {
@@ -479,7 +504,7 @@ function sendVillaToWhatsApp(villaId, checkInDate = null, checkOutDate = null) {
         const nights = Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
         const nightsStr = String(nights).padStart(2, '0');
 
-        messageLines.push('🚨🚨🚨🚨🚨');
+        messageLines.push('\u2705\u2705\u2705');
         messageLines.push(`${villa.title}`);
         messageLines.push(`Location: ${villa.location}`);
         messageLines.push(`Rating: ${villa.rating}`);
@@ -492,7 +517,7 @@ function sendVillaToWhatsApp(villaId, checkInDate = null, checkOutDate = null) {
         messageLines.push('*VillaSepuncak*');
     } else {
         // Fallback without dates
-        messageLines.push('🚨🚨🚨🚨🚨');
+        messageLines.push('\u2705\u2705\u2705');
         messageLines.push(`${villa.title}`);
         messageLines.push(`Location: ${villa.location}`);
         messageLines.push(`Rating: ${villa.rating}`);
@@ -514,23 +539,43 @@ function sendVillaToWhatsApp(villaId, checkInDate = null, checkOutDate = null) {
 }
 
 // Share multiple villas via WhatsApp (for "Send All" button)
-async function sendAllFavoritesToWhatsApp() {
+async function sendAllFavoritesToWhatsApp(checkInDate = null, checkOutDate = null) {
     if (favoriteVillas.length === 0) {
         alert('Your favorites list is empty.');
         return;
     }
 
-    let message = "I'm interested in these villas:\n\n";
+    // Build message similar to sendVillaToWhatsApp, with optional dates for ALL
+    const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const fmtShort = (d) => `${d.getDate()} ${monthsShort[d.getMonth()]} ${d.getFullYear()}`;
 
+    let nightsStr = '';
+    if (checkInDate && checkOutDate) {
+        const nights = Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+        nightsStr = String(nights).padStart(2, '0');
+    }
+
+    const messageLines = [];
     favoriteVillas.forEach(villaId => {
         const villa = villasData.villas.find(v => v.id === villaId);
-        if (villa) {
-            message += `*${villa.title}*\nLocation: ${villa.location}\nRating: ${villa.rating}\n\n`;
+        if (!villa) return;
+        messageLines.push('\u2705\u2705\u2705');
+        messageLines.push(`${villa.title}`);
+        messageLines.push(`Location: ${villa.location}`);
+        messageLines.push(`Rating: ${villa.rating}`);
+        messageLines.push('');
+        if (checkInDate && checkOutDate) {
+            messageLines.push(`Check-In: ${fmtShort(checkInDate)}`);
+            messageLines.push(`Check-Out: ${fmtShort(checkOutDate)}`);
+            messageLines.push(`Total: ${nightsStr} Malam`);
+            messageLines.push('');
         }
     });
+    // Append a single footer call-to-action
+    messageLines.push('Dibantu Cek Availability Kak');
+    messageLines.push('*VillaSepuncak*');
 
-    message += "Please send me more information about these properties.";
-
+    const message = messageLines.join('\n');
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/+6282210081028?text=${encodedMessage}`;
 
@@ -582,6 +627,11 @@ function renderFavModal() {
                 <div>
                     <h4>${villa.title}</h4>
                     <p>Mulai Dari ${favFormattedPrice}/Malam</p>
+                    <div class="fav-villa-meta" style="display:flex; gap:8px; align-items:center; color:#6b7280; font-size:.9rem;">
+                        <span><i class="fas fa-map-marker-alt"></i> ${villa.location}</span>
+                        <span class="sep">•</span>
+                        <span><i class="fas fa-star" style="color:#f39c12;"></i> ${villa.rating}</span>
+                    </div>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -899,8 +949,11 @@ function setupEventListeners() {
         favModal.classList.add('active');
     });
 
-    // Share all favorites button
-    whatsappAllBtn.addEventListener('click', sendAllFavoritesToWhatsApp);
+    // Share all favorites button -> open date picker modal
+    whatsappAllBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openWhatsAppAllBookingModal();
+    });
 
     // Children input change
     childrenInput.addEventListener('input', handleChildrenAges);
@@ -910,13 +963,14 @@ function setupEventListeners() {
 
     // Initialize flatpickr for WhatsApp booking form
     if (whatsappCheckInInput && whatsappCheckOutInput) {
-        let whatsappCheckInPicker = null;
-        let whatsappCheckOutPicker = null;
 
         // Initialize check-in date picker
         whatsappCheckInPicker = flatpickr(whatsappCheckInInput, {
             minDate: 'today',
             dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'j M Y',
+            disableMobile: true,
             locale: 'id',
             onChange: function (selectedDates) {
                 // Update check-out min date to be after check-in
@@ -927,6 +981,17 @@ function setupEventListeners() {
                         whatsappCheckOutPicker.set('minDate', minCheckOut);
                         // Auto-open the check-out picker to enhance UX
                         whatsappCheckOutPicker.open();
+                        // If current checkout is invalid, adjust it to min valid date
+                        const currentOut = whatsappCheckOutPicker.selectedDates?.[0];
+                        if (!currentOut || currentOut <= selectedDates[0]) {
+                            whatsappCheckOutPicker.setDate(minCheckOut, true);
+                        }
+                    }
+                } else {
+                    // If check-in cleared, reset checkout constraints and value
+                    if (whatsappCheckOutPicker) {
+                        whatsappCheckOutPicker.clear();
+                        whatsappCheckOutPicker.set('minDate', 'today');
                     }
                 }
             }
@@ -936,6 +1001,9 @@ function setupEventListeners() {
         whatsappCheckOutPicker = flatpickr(whatsappCheckOutInput, {
             minDate: 'today',
             dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'j M Y',
+            disableMobile: true,
             locale: 'id'
         });
     }
@@ -964,7 +1032,11 @@ function setupEventListeners() {
 
             // Send WhatsApp message with dates (short month + auto nights)
             if (currentWhatsappVillaId) {
+                // Single villa flow
                 sendVillaToWhatsApp(currentWhatsappVillaId, checkInDate, checkOutDate);
+            } else {
+                // All favorites flow
+                sendAllFavoritesToWhatsApp(checkInDate, checkOutDate);
             }
         });
     }
