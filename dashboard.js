@@ -283,7 +283,7 @@
       const actions = document.createElement('div');
       actions.className = 'actions';
       const btnE = document.createElement('button'); btnE.className='btn small'; btnE.innerHTML='<i class="fa fa-pen"></i> Edit';
-      const btnD = document.createElement('button'); btnD.className='btn small danger'; btnD.innerHTML='<i class="fa fa-trash"></i> Delete';
+      const btnD = document.createElement('button'); btnD.className='btn small danger'; btnD.innerHTML='<i class="fa fa-trash"></i> Hapus';
       btnE.addEventListener('click', () => startEdit(v));
       btnD.addEventListener('click', () => confirmDelete(v));
       actions.appendChild(btnE); actions.appendChild(btnD);
@@ -413,14 +413,14 @@
     originalImages = [];
 
     btnDelete.style.display = 'none';
-    formTitle.textContent = 'Add New Villa';
+    formTitle.textContent = 'Tambahkan Vila Baru';
   }
 
   function startEdit(v){
     fldId.value = v.id ?? '';
     fldTitle.value = v.title ?? '';
     fldLocation.value = v.location ?? '';
-    fldPrice.value = v.price ?? '';
+    fldPrice.value = v.price ? v.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '';
     fldRating.value = v.rating ?? '';
     fldBookings.value = v.bookingsThisMonth ?? '';
     fldType.value = v.type ?? 'resort';
@@ -447,7 +447,7 @@
     return {
       title: fldTitle.value.trim(),
       location: fldLocation.value.trim(),
-      price: Number(fldPrice.value||0),
+      price: parseInt(fldPrice.value.replace(/,/g, ''), 10),
       rating: Number(fldRating.value||0),
       bookingsThisMonth: Number(fldBookings.value||0),
       type: fldType.value,
@@ -532,7 +532,7 @@
   }
 
   async function confirmDelete(v){
-    if(!confirm(`Delete villa #${v.id} ${v.title}?`)) return;
+    if(!confirm(`Hapus Vila #${v.id} ${v.title}?`)) return;
     try {
       // Attempt to remove associated images from storage first
       const urls = Array.isArray(v.images) ? v.images : [];
@@ -545,7 +545,43 @@
       if(String(fldId.value) === String(v.id)) resetForm();
     } catch(err){
       console.error('Delete failed', err);
-      // removed alert; error already logged
+    }
+  }
+
+  function collectForm(){
+    return {
+      title: fldTitle.value.trim(),
+      location: fldLocation.value.trim(),
+      price: parseInt(fldPrice.value.replace(/,/g, ''), 10),
+      rating: Number(fldRating.value||0),
+      bookingsThisMonth: Number(fldBookings.value||0),
+      type: fldType.value,
+      bedrooms: Number(fldBedrooms.value||0),
+      bathrooms: Number(fldBathrooms.value||0),
+      guests: Number(fldGuests.value||0),
+      size: fldSize.value.trim(),
+      description: fldDescription.value.trim(),
+      images: toArrayFromInput(fldImages.value),
+      features: toArrayFromInput(fldFeatures.value),
+      amenities: toArrayFromInput(fldAmenities.value),
+      isFeatured: !!fldIsFeatured.checked,
+      isBaru: !!(fldIsBaru && fldIsBaru.checked),
+      isHot: !!(fldIsHot && fldIsHot.checked)
+    };
+  }
+
+  // Format price input with commas
+  function formatPriceInput(input) {
+    if (!input) return;
+    // Remove all non-digit characters
+    let value = input.value.replace(/\D/g, '');
+    
+    // Format with commas
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    
+    // Update the input value if it has changed
+    if (input.value !== value) {
+      input.value = value;
     }
   }
 
@@ -558,6 +594,24 @@
     if (btnCancel) btnCancel.addEventListener('click', resetForm);
     if (form) form.addEventListener('submit', saveForm);
     if (fileImages) fileImages.addEventListener('change', uploadImagesToSupabase);
+    
+    // Add price formatting
+    if (fldPrice) {
+      // Format on input
+      fldPrice.addEventListener('input', function(e) {
+        formatPriceInput(e.target);
+      });
+      
+      // Format on blur in case of paste
+      fldPrice.addEventListener('blur', function(e) {
+        formatPriceInput(e.target);
+      });
+      
+      // Format initial value if present
+      if (fldPrice.value) {
+        formatPriceInput(fldPrice);
+      }
+    }
 
     // Mutually exclusive status flags
     const statusBoxes = [fldIsFeatured, fldIsBaru, fldIsHot].filter(Boolean);
@@ -637,8 +691,6 @@
 
   // Auth Gate
   const AUTH_KEY = 'vs_dash_authed';
-  function showAuth(){ authOverlay.style.display = 'flex'; authPassword.focus(); }
-  function hideAuth(){ authOverlay.style.display = 'none'; }
 
   const already = localStorage.getItem(AUTH_KEY) === '1';
   if (!already) {

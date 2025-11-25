@@ -215,7 +215,12 @@ function renderVillas() {
             <div style="position:relative;">
                 <img src="${firstImg}" alt="${villa.title}" class="villa-img">
                 <div class="villa-img-overlay"></div>
-                ${villa.isFeatured ? '<span class="villa-badge">Featured</span>' : (villa.bookingsThisMonth > 10 ? '<span class="villa-badge" style="background:var(--secondary-color);">Most Booked</span>' : '')}
+                <div class="villa-badges">
+                    ${villa.isFeatured ? '<span class="villa-badge">Featured</span>' : ''}
+                    ${villa.isBaru ? '<span class="villa-badge badge-baru">Baru</span>' : ''}
+                    ${villa.isHot ? '<span class="villa-badge badge-hot">Hot</span>' : ''}
+                    ${!villa.isFeatured && villa.bookingsThisMonth > 10 ? '<span class="villa-badge badge-booked">Most Booked</span>' : ''}
+                </div>
             </div>
             <div class="villa-info">
                 <h3 class="villa-title">${villa.title}</h3>
@@ -408,16 +413,29 @@ function openVillaModal(id) {
     `;
 
     // Add event listeners for thumbnails
-    document.querySelectorAll('.thumbnail').forEach(thumb => {
+    const mainImage = document.querySelector('.main-image');
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    
+    thumbnails.forEach(thumb => {
         thumb.addEventListener('click', (e) => {
             const index = e.target.dataset.index;
-            document.querySelector('.main-image').src = villa.images[index];
+            mainImage.src = villa.images[index];
+            mainImage.dataset.index = index; // Update the current index
 
             // Update active thumbnail
-            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            thumbnails.forEach(t => t.classList.remove('active'));
             e.target.classList.add('active');
         });
     });
+    
+    // Add click event to main image for fullscreen view
+    mainImage.addEventListener('click', () => {
+        const currentIndex = parseInt(mainImage.dataset.index || '0');
+        openFullscreenViewer(villa.images, currentIndex);
+    });
+    
+    // Set initial index on main image
+    mainImage.dataset.index = '0';
 
     // Add event listeners to modal buttons
     document.querySelector('.modal-actions .whatsapp-btn')?.addEventListener('click', (e) => {
@@ -603,6 +621,7 @@ function isFavorite(villaId) {
 // Update favorite count
 function updateFavCount() {
     favCount.textContent = favoriteVillas.length;
+    console.log('Favorite count:', favoriteVillas.length);
 }
 
 // Render favorite villas modal
@@ -1120,8 +1139,136 @@ function setupEventListeners() {
     setTimeout(updateScrollIndicator, 300);
 }
 
+// Fullscreen Image Viewer
+let currentImageIndex = 0;
+let currentVillaImages = [];
+
+function openFullscreenViewer(images, startIndex = 0) {
+    const viewer = document.getElementById('fullscreen-viewer');
+    const fullscreenImage = document.getElementById('fullscreen-image');
+    const currentImageEl = document.getElementById('current-image');
+    const totalImagesEl = document.getElementById('total-images');
+    
+    currentVillaImages = images;
+    currentImageIndex = startIndex;
+    
+    // Update image and counter
+    fullscreenImage.src = currentVillaImages[currentImageIndex];
+    currentImageEl.textContent = currentImageIndex + 1;
+    totalImagesEl.textContent = currentVillaImages.length;
+    
+    // Show the viewer
+    viewer.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFullscreenViewer() {
+    const viewer = document.getElementById('fullscreen-viewer');
+    viewer.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function showNextImage() {
+    if (currentVillaImages.length === 0) return;
+    
+    currentImageIndex = (currentImageIndex + 1) % currentVillaImages.length;
+    updateFullscreenImage();
+}
+
+function showPrevImage() {
+    if (currentVillaImages.length === 0) return;
+    
+    currentImageIndex = (currentImageIndex - 1 + currentVillaImages.length) % currentVillaImages.length;
+    updateFullscreenImage();
+}
+
+function updateFullscreenImage() {
+    const fullscreenImage = document.getElementById('fullscreen-image');
+    const currentImageEl = document.getElementById('current-image');
+    
+    // Add fade out effect
+    fullscreenImage.style.opacity = 0;
+    
+    // After fade out, update image and fade in
+    setTimeout(() => {
+        fullscreenImage.src = currentVillaImages[currentImageIndex];
+        currentImageEl.textContent = currentImageIndex + 1;
+        fullscreenImage.style.opacity = 1;
+    }, 150);
+}
+
+// Initialize fullscreen viewer event listeners
+function initFullscreenViewer() {
+    const viewer = document.getElementById('fullscreen-viewer');
+    const closeBtn = document.querySelector('.close-fullscreen');
+    const nextBtn = document.querySelector('.next-btn');
+    const prevBtn = document.querySelector('.prev-btn');
+    const fullscreenImage = document.getElementById('fullscreen-image');
+    
+    // Close when clicking outside the image
+    viewer.addEventListener('click', (e) => {
+        if (e.target === viewer) {
+            closeFullscreenViewer();
+        }
+    });
+    
+    // Close button
+    closeBtn.addEventListener('click', closeFullscreenViewer);
+    
+    // Navigation buttons
+    nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNextImage();
+    });
+    
+    prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPrevImage();
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (!viewer.classList.contains('show')) return;
+        
+        if (e.key === 'Escape') {
+            closeFullscreenViewer();
+        } else if (e.key === 'ArrowRight') {
+            showNextImage();
+        } else if (e.key === 'ArrowLeft') {
+            showPrevImage();
+        }
+    });
+    
+    // Swipe support for touch devices
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    fullscreenImage.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    fullscreenImage.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, { passive: true });
+    
+    function handleSwipe() {
+        const swipeThreshold = 50; // Minimum distance to consider it a swipe
+        const diff = touchStartX - touchEndX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                showNextImage(); // Swipe left
+            } else {
+                showPrevImage(); // Swipe right
+            }
+        }
+    }
+}
+
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    initFullscreenViewer();
     init()
         .catch(error => {
             console.error('Error initializing app:', error);

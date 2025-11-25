@@ -611,6 +611,7 @@ nav a:hover {
     transition: var(--transition);
     position: relative;
     z-index: 1;
+    height: 20vw;
 }
 
 .villa-img-overlay {
@@ -1427,10 +1428,6 @@ footer {
         font-size: clamp(0.9rem, 2vw, 1.2rem);
         padding: 0.4em 0.6em;
     }
-
-    .villa-img {
-        height: 140px;
-    }
 }
 
 @media (min-width: 992px) {
@@ -1480,6 +1477,113 @@ footer {
         flex: 1 1 0;
         min-width: 0;
     }
+}
+
+/* Fullscreen Image Viewer */
+.fullscreen-viewer {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.fullscreen-viewer.show {
+    display: flex;
+    opacity: 1;
+}
+
+.fullscreen-content {
+    position: relative;
+    width: 90%;
+    height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#fullscreen-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.close-fullscreen {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    font-size: 30px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 2002;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+.close-fullscreen:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 30px;
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    width: 50px;
+    height: 100px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2001;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.prev-btn {
+    left: 0;
+    border-radius: 0 5px 5px 0;
+}
+
+.next-btn {
+    right: 0;
+    border-radius: 5px 0 0 5px;
+}
+
+.image-counter {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 2001;
 }
 
 /* WhatsApp Booking Modal Styles */
@@ -1609,11 +1713,8 @@ footer {
     #whatsapp-booking-form .submit-btn {
         width: 100%;
     }
-}
-
-@media (max-width: 400px) {
 
     .villa-img {
-        height: 90px;
+        height:45vw;
     }
 }

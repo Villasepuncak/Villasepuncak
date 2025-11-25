@@ -13,8 +13,8 @@
     <header class="dash-header">
         <h1>Dashboard</h1>
         <div class="dash-actions">
-            <button id="btn-new" class="btn primary"><i class="fa fa-plus"></i> New Villa</button>
-            <button id="btn-refresh" class="btn"><i class="fa fa-rotate"></i> Refresh</button>
+            <button id="btn-new" class="btn primary"><i class="fa fa-plus"></i> Vila Baru</button>
+            <button id="btn-refresh" class="btn"><i class="fa fa-rotate"></i> Menyegarkan</button>
         </div>
     </header>
 
@@ -53,8 +53,8 @@
             <!-- Cards with tabs -->
             <div class="cards-wrap">
                 <div class="tabs">
-                    <button class="tab-btn active" data-tab="all">All Villas</button>
-                    <button class="tab-btn" data-tab="promoted">Promoted Villa</button>
+                    <button class="tab-btn active" data-tab="all">Semwa Villas</button>
+                    <button class="tab-btn" data-tab="promoted">Promo Villa</button>
                 </div>
                 <div id="villas-cards" class="cards-scroller"></div>
             </div>
@@ -62,86 +62,84 @@
 
         <section class="panel">
             <div class="panel-header">
-                <h2 id="form-title">Add New Villa</h2>
+                <h2 id="form-title">Tambahkan Vila Baru</h2>
             </div>
             <form id="villa-form" class="form">
                 <input type="hidden" id="villa-id" />
                 <div class="grid-2">
                     <div class="form-group">
-                        <label>Title</label>
+                        <label>Nama Villa</label>
                         <input id="title" type="text" required />
                     </div>
                     <div class="form-group">
-                        <label>Location</label>
+                        <label>Lokasi</label>
                         <input id="location" type="text" required />
                     </div>
                 </div>
                 <div class="grid-4">
                     <div class="form-group">
-                        <label>Price (number)</label>
-                        <input id="price" type="number" min="0" step="1" required />
+                        <label>Harga</label>
+                        <input id="price" type="text" inputmode="numeric" pattern="[0-9,]*" required />
                     </div>
                     <div class="form-group">
-                        <label>Rating (0-5)</label>
+                        <label>Bintang (0-5)</label>
                         <input id="rating" type="number" min="0" max="5" step="0.1" required />
                     </div>
                     <div class="form-group">
-                        <label>Bookings This Month</label>
+                        <label>Bookings Bulan ini</label>
                         <input id="bookingsThisMonth" type="number" min="0" step="1" />
                     </div>
                     <div class="form-group">
-                        <label>Type</label>
+                        <label>Tipe</label>
                         <select id="type">
-                            <option value="resort">resort</option>
-                            <option value="outside">outside</option>
+                            <option value="resort">Dalam Resort</option>
+                            <option value="outside">Luar Resort</option>
                         </select>
                     </div>
                 </div>
                 <div class="grid-4">
                     <div class="form-group">
-                        <label>Bedrooms</label>
+                        <label>Kamar Tidur</label>
                         <input id="bedrooms" type="number" min="0" step="1" />
                     </div>
                     <div class="form-group">
-                        <label>Bathrooms</label>
+                        <label>Kamar Mandi</label>
                         <input id="bathrooms" type="number" min="0" step="1" />
                     </div>
                     <div class="form-group">
-                        <label>Guests</label>
+                        <label>Brba Org Bisa Masuk</label>
                         <input id="guests" type="number" min="0" step="1" />
                     </div>
                     <div class="form-group">
-                        <label>Size (text)</label>
+                        <label>Kamar Ukuran</label>
                         <input id="size" type="text" placeholder="e.g. 250 m²" />
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
+                    <label>Deskripsi</label>
                     <textarea id="description" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Images</label>
+                    <label>Gambar Villa</label>
                     <div id="images-previews" class="previews-grid"></div>
                     <textarea id="images" rows="2" class="hidden" placeholder="https://..., https://..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Upload Images to Supabase Storage</label>
+                <div class="form-group" style="margin-bottom: 30px;">
                     <input id="image-files" type="file" accept="image/*" multiple />
-                    <small class="muted">Upload Villa Images.</small>
                 </div>
                 <div class="grid-2">
                     <div class="form-group">
-                        <label>Features (comma-separated)</label>
+                        <label>Fitur (Dipisahkan Koma)</label>
                         <input id="features" type="text" placeholder="Private Pool, Ocean View" />
                     </div>
                     <div class="form-group">
-                        <label>Amenities (comma-separated)</label>
+                        <label>Fasilitas (Dipisahkan Koma)</label>
                         <input id="amenities" type="text" placeholder="WiFi, Breakfast" />
                     </div>
                 </div>
                 <div class="form-group inline">
                     <label class="checkbox">
-                        <input id="isFeatured" type="checkbox" /> Featured
+                        <input id="isFeatured" type="checkbox" /> Promo
                     </label>
                     <label class="checkbox">
                         <input id="isBaru" type="checkbox" /> Baru
