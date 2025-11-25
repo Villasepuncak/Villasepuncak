@@ -1256,13 +1256,3 @@ function initializeLayout() {
 }
 
 initializeLayout();
-
-
-
-
-
-
-
-
-
-
