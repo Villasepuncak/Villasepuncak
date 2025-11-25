@@ -1148,35 +1148,67 @@ function openFullscreenViewer(images, startIndex = 0) {
     const fullscreenImage = document.getElementById('fullscreen-image');
     const currentImageEl = document.getElementById('current-image');
     const totalImagesEl = document.getElementById('total-images');
+    const fullscreenContent = document.querySelector('.fullscreen-content');
     
     currentVillaImages = images;
     currentImageIndex = startIndex;
     
-    // Update image and counter
-    fullscreenImage.src = currentVillaImages[currentImageIndex];
-    currentImageEl.textContent = currentImageIndex + 1;
-    totalImagesEl.textContent = currentVillaImages.length;
+    // Preload the image before showing
+    const img = new Image();
+    img.onload = function() {
+        // Update the image source and counter
+        fullscreenImage.src = this.src;
+        currentImageEl.textContent = currentImageIndex + 1;
+        totalImagesEl.textContent = currentVillaImages.length;
+        
+        // Show the viewer
+        viewer.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Trigger reflow to ensure the initial state is applied
+        void viewer.offsetHeight;
+        
+        // Add show class to trigger the animation
+        viewer.classList.add('show');
+        
+        // Add a small delay to ensure the transition works
+        setTimeout(() => {
+            fullscreenContent.style.opacity = '1';
+            fullscreenContent.style.transform = 'scale(1)';
+        }, 50);
+    };
     
-    // Show the viewer
-    viewer.classList.add('show');
-    document.body.style.overflow = 'hidden';
+    // Start loading the image
+    img.src = currentVillaImages[currentImageIndex];
 }
 
 function closeFullscreenViewer() {
     const viewer = document.getElementById('fullscreen-viewer');
+    const fullscreenContent = document.querySelector('.fullscreen-content');
+    
+    // Start fade out animation
     viewer.classList.remove('show');
-    document.body.style.overflow = '';
+    fullscreenContent.style.opacity = '0';
+    fullscreenContent.style.transform = 'scale(0.95)';
+    
+    // Wait for the animation to complete before hiding
+    setTimeout(() => {
+        viewer.style.display = 'none';
+        document.body.style.overflow = '';
+    }, 400); // Match this with the CSS transition duration
 }
 
-function showNextImage() {
-    if (currentVillaImages.length === 0) return;
+function showNextImage(e) {
+    if (e) e.stopPropagation();
+    if (currentVillaImages.length <= 1) return;
     
     currentImageIndex = (currentImageIndex + 1) % currentVillaImages.length;
     updateFullscreenImage();
 }
 
-function showPrevImage() {
-    if (currentVillaImages.length === 0) return;
+function showPrevImage(e) {
+    if (e) e.stopPropagation();
+    if (currentVillaImages.length <= 1) return;
     
     currentImageIndex = (currentImageIndex - 1 + currentVillaImages.length) % currentVillaImages.length;
     updateFullscreenImage();
@@ -1186,15 +1218,27 @@ function updateFullscreenImage() {
     const fullscreenImage = document.getElementById('fullscreen-image');
     const currentImageEl = document.getElementById('current-image');
     
-    // Add fade out effect
-    fullscreenImage.style.opacity = 0;
+    // Add fade out class
+    fullscreenImage.classList.add('fade-out');
     
     // After fade out, update image and fade in
     setTimeout(() => {
-        fullscreenImage.src = currentVillaImages[currentImageIndex];
-        currentImageEl.textContent = currentImageIndex + 1;
-        fullscreenImage.style.opacity = 1;
-    }, 150);
+        // Create a new image to preload
+        const img = new Image();
+        img.onload = function() {
+            // Update the image source
+            fullscreenImage.src = this.src;
+            currentImageEl.textContent = currentImageIndex + 1;
+            
+            // Remove fade-out class to trigger fade in
+            setTimeout(() => {
+                fullscreenImage.classList.remove('fade-out');
+            }, 20);
+        };
+        
+        // Start loading the new image
+        img.src = currentVillaImages[currentImageIndex];
+    }, 200); // Match this with the CSS transition duration
 }
 
 // Initialize fullscreen viewer event listeners
