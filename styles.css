@@ -995,13 +995,18 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .modal-content {
-    background-color: white;
+    background: white;
     border-radius: var(--border-radius);
-    width: 70%;
+    box-shadow: var(--box-shadow);
+    width: 90%;
+    max-width: 1200px;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
-    padding: clamp(2.5rem, 5vw, 3.5rem) 7px;
+    padding: 2rem;
+    margin: 2rem auto;
+    box-sizing: border-box;
 }
 
 @media (max-width: 500px) {
@@ -1026,35 +1031,102 @@ input[type="number"]::-webkit-outer-spin-button {
     display: grid;
     grid-template-columns: 1fr;
     gap: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (min-width: 992px) {
+    .villa-details {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 .villa-gallery {
     position: relative;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .main-image {
+    max-width: 100%;
     width: 100%;
-    height: 300px;
-    object-fit: cover;
+    height: auto;
+    max-height: 50vh;
+    object-fit: contain;
     border-radius: var(--border-radius);
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+    display: block;
+    margin: 0 auto;
+}
+
+.main-image:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .thumbnail-container {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: 0.8rem;
+    margin: 1rem 0;
+    padding: 1rem 0.5rem;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary-color) rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.thumbnail-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.thumbnail-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 10px;
+    margin: 0 10px;
+}
+
+.thumbnail-container::-webkit-scrollbar-thumb {
+    background-color: var(--secondary-color);
+    border-radius: 10px;
+    border: 2px solid white;
+}
+
+/* Firefox */
+.thumbnail-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary-color) rgba(0,0,0,0.1);
+}
+
+/* Edge and IE */
+@supports (-ms-ime-align: auto) {
+    .thumbnail-container {
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+    }
 }
 
 .thumbnail {
-    width: 80px;
-    height: 60px;
+    flex: 0 0 auto;
+    width: 100px;
+    height: 75px;
+    min-width: 100px;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     opacity: 0.7;
-    transition: var(--transition);
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .thumbnail:hover,
@@ -1065,9 +1137,23 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .villa-specs {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 1rem;
     margin: 1.5rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (max-width: 768px) {
+    .villa-specs {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .villa-specs {
+        grid-template-columns: 1fr;
+    }
 }
 
 .spec-item {
@@ -1544,33 +1630,77 @@ footer {
 .nav-btn {
     position: fixed;
     top: 50%;
-    transform: translateY(-50%);
-    font-size: 30px;
-    color: white;
-    background: rgba(0, 0, 0, 0.5);
+    transform: translateY(-50%) scale(1);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--secondary-color);
     border: none;
+    font-size: 1.8rem;
     width: 50px;
-    height: 100px;
+    height: 50px;
+    border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2001;
-    transition: all 0.3s ease;
+    z-index: 1001;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-btn:hover {
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--secondary-color);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .prev-btn {
-    left: 0;
-    border-radius: 0 5px 5px 0;
+    left: 20px;
 }
 
 .next-btn {
-    right: 0;
-    border-radius: 5px 0 0 5px;
+    right: 20px;
+}
+
+.nav-btn:hover {
+    background: var(--secondary-color);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.nav-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+@keyframes pulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+.nav-btn:active {
+    animation: pulse 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.5rem;
+    }
+    
+    .prev-btn {
+        left: 10px;
+    }
+    
+    .next-btn {
+        right: 10px;
+    }
 }
 
 .image-counter {
@@ -1586,108 +1716,7 @@ footer {
     z-index: 2001;
 }
 
-/* WhatsApp Booking Modal Styles */
-#whatsapp-booking-modal .modal-content {
-    max-width: 500px;
-    width: 90%;
-}
-
-#whatsapp-booking-modal .modal-body {
-    padding: 2rem;
-}
-
-#whatsapp-booking-modal .section-title {
-    margin-bottom: 1.5rem;
-    text-align: center;
-    font-size: 1.5rem;
-    color: var(--primary-color);
-}
-
-#whatsapp-booking-form .form-group {
-    margin-bottom: 1.5rem;
-}
-
-#whatsapp-booking-form .form-group label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    color: var(--text-color);
-    font-weight: 600;
-}
-
-#whatsapp-booking-form .form-group label i {
-    color: var(--secondary-color);
-}
-
-#whatsapp-booking-form .form-group input {
-    width: 100%;
-    padding: 0.875rem 1rem;
-    border: 2px solid #e0e6ed;
-    border-radius: 10px;
-    font-size: 1rem;
-    color: var(--text-color);
-    transition: all 0.3s ease;
-    background-color: #f8fafc;
-    cursor: pointer;
-}
-
-#whatsapp-booking-form .form-group input:focus {
-    outline: none;
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 3px rgba(49, 79, 160, 0.1);
-    background-color: white;
-}
-
-#whatsapp-booking-form .form-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-    justify-content: flex-end;
-}
-
-#whatsapp-booking-form .submit-btn {
-    padding: 0.875rem 2rem;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--secondary-color);
-    color: white;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-#whatsapp-booking-form .submit-btn:hover {
-    background-color: #2d3f7a;
-}
-
-/* WhatsApp Booking Modal Close Button (X icon) */
-#whatsapp-booking-modal .close-modal.btn-cancel {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    color: #6b7280;
-    font-size: 1.75rem;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0.5rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s ease;
-    z-index: 1001;
-}
-
-#whatsapp-booking-modal .close-modal.btn-cancel:hover {
-    color: #374151;
-}
-
+/* ... */
 @media (max-width: 600px) {
     #whatsapp-booking-modal .modal-content {
         width: 95%;
