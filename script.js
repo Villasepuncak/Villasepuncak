@@ -546,7 +546,7 @@ function sendVillaToWhatsApp(villaId, checkInDate = null, checkOutDate = null) {
 
     const message = messageLines.join('\n');
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/+6282210081028?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/+6283185294060?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
 
@@ -595,7 +595,7 @@ async function sendAllFavoritesToWhatsApp(checkInDate = null, checkOutDate = nul
 
     const message = messageLines.join('\n');
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/+6282210081028?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/+6283185294060?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
 }
