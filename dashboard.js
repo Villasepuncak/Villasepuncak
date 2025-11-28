@@ -54,12 +54,14 @@
   let siteConfig = { logo_url: '', hero_images: [] };
   let heroImages = [];
 
-  function toArrayFromInput(val){
-    if(!val) return [];
-    return val
-      .split(',')
-      .map(s=>s.trim())
-      .filter(Boolean);
+  function toArrayFromInput(input) {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    
+    // Split by comma or newline, trim each item, and filter out empty strings
+    return input.split(/[\n,]/)
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
   }
 
   // ---------------- Site Config (logo, hero) ----------------
@@ -465,33 +467,61 @@
     };
   }
 
-  async function saveForm(e){
+  async function saveForm(e) {
     e.preventDefault();
-    const id = fldId.value ? Number(fldId.value) : null;
-    const payload = collectForm();
-
+    let id = fldId.value ? Number(fldId.value) : null;
+    let payload = collectForm();
+    
     try {
-      if(id){
-        const { error } = await window.supabase.from('villas').update(payload).eq('id', id);
-        if(error) throw error;
-        // After successful update, delete any removed images from storage
+      // Handle new villa creation
+      if (!id) {
+        // First insert the villa to get an ID
+        const { data: newVilla, error: insertError } = await window.supabase
+          .from('villas')
+          .insert([payload])
+          .select()
+          .single();
+          
+        if (insertError) throw insertError;
+        
+        // Update the payload with the new ID
+        payload = { ...newVilla, ...payload };
+        id = newVilla.id;
+        
+        // If there are images, update the villa with the image URLs
+        if (payload.images && payload.images.length > 0) {
+          const { error: updateError } = await window.supabase
+            .from('villas')
+            .update({ images: payload.images })
+            .eq('id', id);
+            
+          if (updateError) throw updateError;
+        }
+      } 
+      // Handle updating existing villa
+      else {
+        const { error: updateError } = await window.supabase
+          .from('villas')
+          .update(payload)
+          .eq('id', id);
+          
+        if (updateError) throw updateError;
+        
+        // Clean up any removed images from storage
         const removed = (originalImages || []).filter(u => !(payload.images || []).includes(u));
         if (removed.length) {
           await deleteImagesFromStorage(removed, id);
         }
-      } else {
-        const { error } = await window.supabase.from('villas').insert(payload);
-        if(error) throw error;
       }
-      // Clear search so new/updated row is visible
-      if (typeof searchInput !== 'undefined' && searchInput) {
-        searchInput.value = '';
-      }
+      
+      // Clear search and reload the list
+      if (searchInput) searchInput.value = '';
       await loadAndRender();
       resetForm();
-    } catch(err){
+      
+    } catch(err) {
       console.error('Save failed', err);
-      // removed alert; error already logged
+      alert('Failed to save villa. Please check the console for details.');
     }
   }
 
@@ -710,61 +740,51 @@
   } else {
     initDashboard();
   }
+
+  async function uploadImagesToSupabase() {
+    const files = document.getElementById('image-files')?.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const bucket = 'villas';
+      const urls = [];
+      
+      for (const file of files) {
+        const ext = file.name.split('.').pop();
+        const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const path = `uploads/${filename}`;
+        
+        // Upload the file
+        const { error: upErr } = await window.supabase.storage
+          .from(bucket)
+          .upload(path, file, { 
+            cacheControl: '3600', 
+            upsert: false, 
+            contentType: file.type 
+          });
+          
+        if (upErr) throw upErr;
+        
+        // Get the public URL
+        const { data } = window.supabase.storage.from(bucket).getPublicUrl(path);
+        if (data?.publicUrl) {
+          urls.push(data.publicUrl);
+        }
+      }
+
+      if (urls.length > 0) {
+        // Get current images
+        const currentImages = getImagesArray();
+        // Add new images to the current ones
+        const allImages = [...currentImages, ...urls];
+        // Update the textarea and preview
+        setImagesArray(allImages);
+        // Clear the file input
+        document.getElementById('image-files').value = '';
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Failed to upload images. Please try again.');
+    }
+  }
 })();
-
-async function uploadImagesToSupabase(){
-  const files = document.getElementById('image-files')?.files;
-  const imagesTextarea = document.getElementById('images');
-  if(!files || files.length === 0){
-    // no files chosen; skip without alert
-    return;
-  }
-  if(!window.supabase){
-    console.error('Supabase is not initialized.');
-    return;
-  }
-
-  const bucket = 'villas';
-  const urls = [];
-  for (const file of files){
-    const ext = file.name.split('.').pop();
-    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const path = `uploads/${filename}`;
-    const { error: upErr } = await window.supabase.storage
-      .from(bucket)
-      .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
-    if(upErr){
-      console.error('Upload failed:', upErr);
-      return;
-    }
-    const { data } = window.supabase.storage.from(bucket).getPublicUrl(path);
-    if (data?.publicUrl) urls.push(data.publicUrl);
-  }
-
-  if(urls.length){
-    const existing = imagesTextarea.value.trim();
-    imagesTextarea.value = existing ? `${existing}, ${urls.join(', ')}` : urls.join(', ');
-    document.getElementById('image-files').value = '';
-    // refresh previews
-    const ev = new Event('input');
-    imagesTextarea.dispatchEvent(ev);
-    // or call directly
-    if (typeof renderImagePreviews === 'function') {
-      // no-op; inside closure we already render via setImagesArray
-    }
-    // Use closure function via hidden textarea
-    // Since we can't access closure here, mimic by updating DOM element used
-    const previews = document.getElementById('images-previews');
-    if (previews) {
-      // Rebuild simple previews (duplicate logic minimal)
-      previews.innerHTML = '';
-      imagesTextarea.value.split(',').map(s=>s.trim()).filter(Boolean).forEach((url) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'preview-item';
-        const img = document.createElement('img');
-        img.src = url; wrap.appendChild(img);
-        previews.appendChild(wrap);
-      });
-    }
-  }
-}
