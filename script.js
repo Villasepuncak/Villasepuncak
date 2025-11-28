@@ -842,7 +842,7 @@ function handleBookingSubmit(e) {
     message += `Please contact the guest as soon as possible.`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/+6283169371998?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/+6283185294060?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
     bookingForm.reset();
