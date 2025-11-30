@@ -899,11 +899,6 @@ input[type="date"] {
     padding-right: clamp(2rem, 4vw, 3rem);
 }
 
-/* Number Input Styling */
-input[type="number"] {
-    -moz-appearance: textfield;
-}
-
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
