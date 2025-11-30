@@ -372,7 +372,7 @@ function openVillaModal(id) {
                     </div>
                     <div class="spec-item">
                         <i class="fas fa-users"></i>
-                        <span>Sleeps ${villa.guests}</span>
+                        <span>Pax ${villa.guests}</span>
                     </div>
                     <div class="spec-item">
                         <i class="fas fa-vector-square"></i>
